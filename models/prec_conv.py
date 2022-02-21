@@ -1,5 +1,4 @@
 import torch
-import torch.fft
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
@@ -87,6 +86,7 @@ class PreConv(_ConvNd):
         return F.conv2d(input, weight, self.bias, stride,
                         padd, self.dilation, self.groups)
     
+
     def preconditioning(self, cout, kernel):
         if (self.kernel_size[0]==1) or (self.kernel_size[1] ==1):
             V = kernel ** 2
@@ -101,18 +101,22 @@ class PreConv(_ConvNd):
         else:
             final_size_x = cout.size(-2)
             final_size_y = cout.size(-1)
-            f_input = torch.rfft(cout, 2, normalized=False, onesided=True)
+            # f_input = torch.rfft(cout, 2, normalized=False, onesided=True)
+            f_input = torch.fft.rfft2(cout)
             with torch.no_grad():
                 if self.training:
                     pad_kernel = F.pad(kernel, [0, final_size_y-self.kernel_size[1], 0, final_size_x-self.kernel_size[0]])
-                    f_weight = torch.rfft(pad_kernel, 2, normalized=False, onesided=True)
-                    V = complex_abs(f_weight) 
+                    # f_weight = torch.rfft(pad_kernel, 2, normalized=False, onesided=True)
+                    f_weight = torch.fft.rfft2(pad_kernel)
+                    # V = complex_abs(f_weight)
+                    V = f_weight.abs() ** 2 # f_weight is a complex number 
                     V = torch.sum(V, dim=1)
                     V = torch.exp(-0.5*torch.log(V))
                     self._calculate_running_estimate(V)
                 else:
                     V = self.running_V
-            output = torch.irfft(compl_mul_2D(f_input, V), 2, normalized=False, signal_sizes=(final_size_x,final_size_y))
+            # output = torch.irfft(compl_mul_2D(f_input, V), 2, normalized=False, signal_sizes=(final_size_x,final_size_y))
+            output = torch.fft.irfft2(f_input.mul_(V))
             return output
         
     def forward(self, input):

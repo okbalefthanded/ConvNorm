@@ -5,12 +5,13 @@ import torch.nn as nn
 
 KERNEL_SIZE = 3
 class CNN(BaseModel):
-    def __init__(self, num_classes=10, norm_layer_type = 'bn' ,conv_layer_type = 'conv2d',linear_layer_type = 'linear', activation_layer_type = 'relu'):
+    def __init__(self, num_classes=10, norm_layer_type = 'bn' ,conv_layer_type = 'conv2d',
+                  linear_layer_type = 'linear', activation_layer_type = 'relu'):
         super().__init__(norm_layer_type, conv_layer_type, linear_layer_type, activation_layer_type)
 
         cfg = [8, 8, 'M', 16, 16, 'M', 32, 32, 'M']
         self.features = self._make_layers(cfg)
-        self.classifier= self.linear_layer(512,num_classes)
+        self.classifier= self.linear_layer(512, num_classes)
 
 
     def forward(self, x):
